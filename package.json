@@ -1,0 +1,35 @@
+{
+  "name": "script-manager",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jan Blaha",
+    "email": "jan.blaha@hotmail.com"
+  },
+  "contributors": [],
+  "description": "Manager for running foreign and potentionally dangerous scripts in the cluster",
+  "keywords": [
+    "custom",
+    "script",
+    "manager"
+  ],
+  "homepage": "https://github.com/pofider/node-script-manager",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:pofider/node-script-manager.git"
+  },
+  "dependencies": {
+    "string": "3.0.0",
+    "request": "2.53.0",
+    "underscore": "1.8.2",
+    "net-cluster": "0.0.2"
+  },
+  "devDependencies": {
+    "mocha": "2.1.0",
+    "should": "5.0.1"
+  },
+  "scripts": {
+    "test": "mocha test/test.js"
+  },
+  "main": "index.js",
+  "licence": "MIT"
+}
