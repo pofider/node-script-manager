@@ -6,16 +6,10 @@ var should = require("should"),
 
 describe("scripts manager", function () {
 
-    var scriptsManager;
+    var scriptsManager = new ScriptsManager({ numberOfWorkers : 2 });
 
     beforeEach(function (done) {
-        scriptsManager = new ScriptsManager();
-        scriptsManager.start(function (err) {
-            if (err)
-                return done(err);
-
-            done();
-        });
+        scriptsManager.ensureStarted(done);
     });
 
     afterEach(function () {
@@ -57,6 +51,25 @@ describe("scripts manager", function () {
                 done(new Error("It should timeout"));
 
         }, 500);
+    });
+
+    it("should handle unexpected error", function (done) {
+        scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "unexpectedError.js")}, function (err, res) {
+            if (err)
+                return done();
+
+            done(new Error("There should be an error"));
+        });
+    });
+
+    it("should expose gc", function (done) {
+        scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
+            if (err)
+                return done(err);
+
+            res.foo.should.be.eql("foo");
+            done();
+        });
     });
 });
 
