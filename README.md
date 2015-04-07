@@ -1,4 +1,6 @@
 #script-manager
+[![NPM Version](http://img.shields.io/npm/v/script-manager.svg?style=flat-square)](https://npmjs.com/package/script-manager)
+[![License](http://img.shields.io/npm/l/script-manager?style=flat-square)](http://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/pofider/node-script-manager.png?branch=master)](https://travis-ci.org/pofider/node-script-manager)
 
 **node.js manager for running foreign and potentially dangerous scripts in the cluster**
