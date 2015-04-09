@@ -6,14 +6,10 @@ var should = require("should"),
 
 describe("scripts manager", function () {
 
-    var scriptsManager = new ScriptsManager({ numberOfWorkers : 2 });
+    var scriptsManager = new ScriptsManager({numberOfWorkers: 2});
 
     beforeEach(function (done) {
         scriptsManager.ensureStarted(done);
-    });
-
-    afterEach(function () {
-
     });
 
     it("should be able to execute simple script", function (done) {
@@ -60,6 +56,50 @@ describe("scripts manager", function () {
 
             done(new Error("There should be an error"));
         });
+    });
+
+    it("should be able to callback to the caller", function (done) {
+        function callback(str, cb) {
+            cb(null, str + "aaa");
+        };
+
+        scriptsManager.execute({}, {
+            execModulePath: path.join(__dirname, "scripts", "callback.js"),
+            callback: callback
+        }, function (err, res) {
+            if (err)
+                return done(err);
+
+            res.test.should.be.eql("testaaa")
+
+            done();
+        });
+    });
+
+    it("should be able to process parallel requests", function (done) {
+        function callback(str, cb) {
+            setTimeout(function() {
+                cb(null, str + "aaa");
+            }, 10);
+        };
+
+        var doneCounter = [];
+
+        for (var i = 0; i < 20; i++) {
+            scriptsManager.execute({}, {
+                execModulePath: path.join(__dirname, "scripts", "callback.js"),
+                callback: callback
+            }, function (err, res) {
+                if (err)
+                    return done(err);
+
+                res.test.should.be.eql("testaaa")
+                doneCounter++;
+
+                if (doneCounter === 20)
+                    done();
+            });
+        }
     });
 
     it("should expose gc", function (done) {
