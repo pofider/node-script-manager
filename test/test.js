@@ -133,5 +133,20 @@ describe("scripts manager", function () {
             });
         });
     });
+
+    it("should be able to process high data volumes", function (done) {
+        this.timeout(7000);
+        var data = { foo: "foo", people: []};
+        for (var i = 0; i < 2000000; i++) {
+            data.people.push(i);
+        }
+        scriptsManager.execute(data, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
+            if (err)
+                return done(err);
+
+            res.foo.should.be.eql("foo");
+            done();
+        });
+    });
 });
 
