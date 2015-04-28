@@ -12,6 +12,10 @@ describe("scripts manager", function () {
         scriptsManager.ensureStarted(done);
     });
 
+    afterEach(function () {
+        scriptsManager.kill();
+    });
+
     it("should be able to execute simple script", function (done) {
         scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
             if (err)
@@ -21,6 +25,7 @@ describe("scripts manager", function () {
             done();
         });
     });
+
 
     it("should handle script error", function (done) {
         scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "error.js")}, function (err, res) {
@@ -32,7 +37,7 @@ describe("scripts manager", function () {
     });
 
     it("should handle timeouts", function (done) {
-        var timeouted = false
+        var timeouted = false;
         scriptsManager.execute({foo: "foo"},
             {
                 execModulePath: path.join(__dirname, "scripts", "timeout.js"),
@@ -61,7 +66,7 @@ describe("scripts manager", function () {
     it("should be able to callback to the caller", function (done) {
         function callback(str, cb) {
             cb(null, str + "aaa");
-        };
+        }
 
         scriptsManager.execute({}, {
             execModulePath: path.join(__dirname, "scripts", "callback.js"),
@@ -70,7 +75,7 @@ describe("scripts manager", function () {
             if (err)
                 return done(err);
 
-            res.test.should.be.eql("testaaa")
+            res.test.should.be.eql("testaaa");
 
             done();
         });
@@ -81,7 +86,7 @@ describe("scripts manager", function () {
             setTimeout(function() {
                 cb(null, str + "aaa");
             }, 10);
-        };
+        }
 
         var doneCounter = [];
 
@@ -93,7 +98,7 @@ describe("scripts manager", function () {
                 if (err)
                     return done(err);
 
-                res.test.should.be.eql("testaaa")
+                res.test.should.be.eql("testaaa");
                 doneCounter++;
 
                 if (doneCounter === 20)
@@ -109,6 +114,23 @@ describe("scripts manager", function () {
 
             res.foo.should.be.eql("foo");
             done();
+        });
+    });
+
+    it("should be able to set up on custom port", function (done) {
+        var scriptsManager2 = new ScriptsManager({numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000});
+        scriptsManager2.start(function(err) {
+            if (err)
+                return done(err);
+
+            scriptsManager2.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
+                if (err)
+                    return done(err);
+
+                scriptsManager2.options.port.should.be.within(10000, 11000);
+                res.foo.should.be.eql("foo");
+                done();
+            });
         });
     });
 });
