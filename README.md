@@ -72,6 +72,19 @@ module.exports = function(inputs, callback, done) {
 });
 ```
 
+##Options
+
+```js
+var scriptManager = require("script-manager")({
+ 		/* number of worker node.js processes */
+		numberOfWorkers: 2,
+		/* set a custom hostname on which script execution server is started, useful is cloud environments where you need to set specific IP */
+		host: '127.0.0.1',
+		/* set a specific port range for script execution server */
+		portLeftBoundary: 1000,
+		portRightBoundary: 2000
+	});
+```
 
 
 ##License
