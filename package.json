@@ -1,6 +1,6 @@
 {
   "name": "script-manager",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Jan Blaha",
     "email": "jan.blaha@hotmail.com"
@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "net-cluster": "0.0.2",
-    "portscanner": "^1.0.0",
+    "portscanner": "1.0.0",
     "request": "2.53.0",
     "string": "3.0.0",
     "underscore": "1.8.2",
