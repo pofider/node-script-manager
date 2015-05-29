@@ -1,5 +1,21 @@
+
 module.exports = function(options) {
-    return new (require("./lib/manager.js"))(options);
+    var options = options || {};
+    options.timeout = options.timeout || 10000;
+    options.strategy = options.strategy || "http-servers";
+
+    if (options.strategy === "http-servers") {
+        return new (require("./lib/manager-servers.js"))(options);
+    }
+
+    if (options.strategy === "dedicated-process") {
+        return new (require("./lib/manager-processes.js"))(options);
+    }
+
+    throw new Error("Unsupported scripts manager strategy: " + options.strategy);
 };
 
-module.exports.ScriptManager = require("./lib/manager.js");
+module.exports.ScriptManager = require("./lib/manager-servers.js");
+module.exports.ScriptManagerOnHttpServers = module.exports.ScriptManager;
+
+module.exports.ScriptManagerOnProcesses = require("./lib/manager-processes.js");
