@@ -82,7 +82,10 @@ var scriptManager = require("script-manager")({
 		host: '127.0.0.1',
 		/* set a specific port range for script execution server */
 		portLeftBoundary: 1000,
-		portRightBoundary: 2000
+		portRightBoundary: 2000,
+		/* switch to use dedicated process for script evalution, this can help with
+		some issues caused by corporate proxies */
+		strategy: "http-server | dedicated-process"
 	});
 ```
 

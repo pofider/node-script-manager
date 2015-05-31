@@ -4,7 +4,7 @@ module.exports = function(options) {
     options.timeout = options.timeout || 10000;
     options.strategy = options.strategy || "http-servers";
 
-    if (options.strategy === "http-servers") {
+    if (options.strategy === "http-server") {
         return new (require("./lib/manager-servers.js"))(options);
     }
 
