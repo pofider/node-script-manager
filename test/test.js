@@ -183,6 +183,21 @@ describe("scripts manager", function () {
                 done();
             });
         });
+
+        it("should be able to execute script with giant input data", function (done) {
+            this.timeout(10000);
+            var foo = "xxx";
+            for (var i = 0; i < 1000000; i++) {
+                foo += "yyyyyyyyyyyyy";
+            }
+            scriptsManager.execute({foo: foo}, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
+                if (err)
+                    return done(err);
+
+                res.foo.should.be.eql(foo);
+                done();
+            });
+        });
     }
 });
 
