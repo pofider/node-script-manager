@@ -132,6 +132,22 @@ describe("scripts manager", function () {
             });
         });
 
+        it("should be able to callback error to the caller", function (done) {
+            function callback(str, cb) {
+                cb(null, str + "aaa");
+            }
+
+            scriptsManager.execute({}, {
+                execModulePath: path.join(__dirname, "scripts", "callbackError.js"),
+                callback: callback
+            }, function (err, res) {
+                if (err)
+                    return done();
+
+                done(new Error("It should have failed"));
+            });
+        });
+
         it("should be able to process parallel requests", function (done) {
             function callback(str, cb) {
                 setTimeout(function() {
