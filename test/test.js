@@ -52,6 +52,44 @@ describe("scripts manager", function () {
         });
     });
 
+    describe("servers with custom settings", function (){
+        it("should fail when input exceeds the inputRequestLimit", function (done) {
+            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 5});
+            scriptsManager.ensureStarted(function(err) {
+                if (err) {
+                    return done(err);
+                }
+
+                scriptsManager.execute("foooooo", {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
+                    scriptsManager.kill();
+                    if (err) {
+                        return done();
+                    }
+
+                    done(new Error("It should have dailed"));
+                });
+            });
+        });
+
+        it("should not fail when input is shorter the inputRequestLimit", function (done) {
+            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 500});
+            scriptsManager.ensureStarted(function(err) {
+                if (err) {
+                    return done(err);
+                }
+
+                scriptsManager.execute("foooooo", {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
+                    scriptsManager.kill();
+                    if (err) {
+                        return done(err);
+                    }
+
+                    done();
+                });
+            });
+        });
+    });
+
     describe("processes", function () {
 
         var scriptsManager = new ScriptsManagerWithProcesses({numberOfWorkers: 2});
@@ -82,7 +120,7 @@ describe("scripts manager", function () {
             scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "error.js")}, function (err, res) {
                 if (!err)
                     return done(new Error("It should have failed."));
-
+                
                 done();
             });
         });
