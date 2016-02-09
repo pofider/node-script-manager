@@ -120,7 +120,8 @@ describe("scripts manager", function () {
             scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "error.js")}, function (err, res) {
                 if (!err)
                     return done(new Error("It should have failed."));
-                
+
+                err.stack.should.containEql("error.js");
                 done();
             });
         });
