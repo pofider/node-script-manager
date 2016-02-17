@@ -2,6 +2,7 @@ var should = require("should"),
     path = require("path"),
     ScriptsManager = require("../lib/manager-servers.js");
     ScriptsManagerWithProcesses = require("../lib/manager-processes.js");
+    ScriptManagerInProcess = require("../lib/in-process.js");
 
 
 describe("scripts manager", function () {
@@ -18,6 +19,7 @@ describe("scripts manager", function () {
         });
 
         common(scriptsManager);
+        commonForSafeExecution(scriptsManager);
 
         it("should be able to set up on custom port", function (done) {
             var scriptsManager2 = new ScriptsManager({numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000});
@@ -102,7 +104,61 @@ describe("scripts manager", function () {
         });
 
         common(scriptsManager);
+        commonForSafeExecution(scriptsManager);
     });
+
+    describe("in process", function () {
+
+        var scriptsManager = new ScriptManagerInProcess();
+        beforeEach(function (done) {
+            scriptsManager.ensureStarted(done);
+        });
+
+        afterEach(function () {
+            scriptsManager.kill();
+        });
+
+        common(scriptsManager);
+    });
+
+    function commonForSafeExecution(scriptsManager) {
+        it("should handle timeouts", function (done) {
+            var timeouted = false;
+            scriptsManager.execute({foo: "foo"},
+              {
+                  execModulePath: path.join(__dirname, "scripts", "timeout.js"),
+                  timeout: 10
+              }, function (err, res) {
+                  timeouted = true;
+                  done();
+              });
+
+            setTimeout(function () {
+                if (!timeouted)
+                    done(new Error("It should timeout"));
+
+            }, 500);
+        });
+
+        it("should handle unexpected error", function (done) {
+            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "unexpectedError.js")}, function (err, res) {
+                if (err)
+                    return done();
+
+                done(new Error("There should be an error"));
+            });
+        });
+
+        it("should expose gc", function (done) {
+            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
+                if (err)
+                    return done(err);
+
+                res.foo.should.be.eql("foo");
+                done();
+            });
+        });
+    }
 
     function common(scriptsManager) {
 
@@ -123,33 +179,6 @@ describe("scripts manager", function () {
 
                 err.stack.should.containEql("error.js");
                 done();
-            });
-        });
-
-        it("should handle timeouts", function (done) {
-            var timeouted = false;
-            scriptsManager.execute({foo: "foo"},
-                {
-                    execModulePath: path.join(__dirname, "scripts", "timeout.js"),
-                    timeout: 10
-                }, function (err, res) {
-                    timeouted = true;
-                    done();
-                });
-
-            setTimeout(function () {
-                if (!timeouted)
-                    done(new Error("It should timeout"));
-
-            }, 500);
-        });
-
-        it("should handle unexpected error", function (done) {
-            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "unexpectedError.js")}, function (err, res) {
-                if (err)
-                    return done();
-
-                done(new Error("There should be an error"));
             });
         });
 
@@ -211,16 +240,6 @@ describe("scripts manager", function () {
                         done();
                 });
             }
-        });
-
-        it("should expose gc", function (done) {
-            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
-                if (err)
-                    return done(err);
-
-                res.foo.should.be.eql("foo");
-                done();
-            });
         });
 
         it("should be able to execute script with giant input data", function (done) {

@@ -12,6 +12,10 @@ module.exports = function(options) {
         return new (require("./lib/manager-processes.js"))(options);
     }
 
+    if (options.strategy === "in-process") {
+        return new (require("./lib/in-process.js"))(options);
+    }
+
     throw new Error("Unsupported scripts manager strategy: " + options.strategy);
 };
 
