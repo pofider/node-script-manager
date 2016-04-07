@@ -1,3 +1,9 @@
+function updateProcessArgs() {
+    //fix freeze during debugging
+    process.execArgv = _.filter(process.execArgv, function (arg) {
+        return !S(arg).startsWith("--debug");
+    });
+}
 
 module.exports = function(options) {
     var options = options || {};
@@ -5,10 +11,12 @@ module.exports = function(options) {
     options.strategy = options.strategy || "http-server";
 
     if (options.strategy === "http-server") {
+        updateProcessArgs();
         return new (require("./lib/manager-servers.js"))(options);
     }
 
     if (options.strategy === "dedicated-process") {
+        updateProcessArgs();
         return new (require("./lib/manager-processes.js"))(options);
     }
 

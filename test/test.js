@@ -4,7 +4,6 @@ var should = require("should"),
     ScriptsManagerWithProcesses = require("../lib/manager-processes.js");
     ScriptManagerInProcess = require("../lib/in-process.js");
 
-
 describe("scripts manager", function () {
 
     describe("servers", function () {
@@ -45,6 +44,16 @@ describe("scripts manager", function () {
                 data.people.push(i);
             }
             scriptsManager.execute(data, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
+                if (err)
+                    return done(err);
+
+                res.foo.should.be.eql("foo");
+                done();
+            });
+        });
+
+        it("should expose gc", function (done) {
+            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
                 if (err)
                     return done(err);
 
@@ -146,16 +155,6 @@ describe("scripts manager", function () {
                     return done();
 
                 done(new Error("There should be an error"));
-            });
-        });
-
-        it("should expose gc", function (done) {
-            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
-                if (err)
-                    return done(err);
-
-                res.foo.should.be.eql("foo");
-                done();
             });
         });
     }
