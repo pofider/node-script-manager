@@ -1,4 +1,5 @@
-var _ = require('underscore');
+var _ = require('underscore'),
+    S = require('string');
 
 function updateProcessArgs() {
     //fix freeze during debugging
