@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 function updateProcessArgs() {
     //fix freeze during debugging
     process.execArgv = _.filter(process.execArgv, function (arg) {
