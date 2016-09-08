@@ -51,16 +51,6 @@ describe("scripts manager", function () {
                 done();
             });
         });
-
-        it("should expose gc", function (done) {
-            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
-                if (err)
-                    return done(err);
-
-                res.foo.should.be.eql("foo");
-                done();
-            });
-        });
     });
 
     describe("servers with custom settings", function (){
@@ -95,6 +85,40 @@ describe("scripts manager", function () {
                         return done(err);
                     }
 
+                    done();
+                });
+            });
+        });
+
+        it("should be able to expose gc through args to dedicated process", function (done) {
+            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, strategy: 'dedicated-process', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } });
+            scriptsManager.ensureStarted(function(err) {
+                if (err) {
+                    return done(err);
+                }
+
+                scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
+                    if (err)
+                        return done(err);
+
+                    res.foo.should.be.eql("foo");
+                    done();
+                });
+            });
+        });
+
+        it("should be able to expose gc through args to http server", function (done) {
+            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, strategy: 'http-server', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } });
+            scriptsManager.ensureStarted(function(err) {
+                if (err) {
+                    return done(err);
+                }
+
+                scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
+                    if (err)
+                        return done(err);
+
+                    res.foo.should.be.eql("foo");
                     done();
                 });
             });

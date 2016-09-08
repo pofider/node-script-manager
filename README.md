@@ -87,7 +87,9 @@ var scriptManager = require("script-manager")({
 		inputRequestLimit: 200e6,
 		/* switch to use dedicated process for script evalution, this can help with
 		some issues caused by corporate proxies */
-		strategy: "http-server | dedicated-process | in-process"
+		strategy: "http-server | dedicated-process | in-process",
+		/* options passed to forked node worker process: { execArgv: ['–-max-old-space-size=128'] } */
+		forkOptions: []
 	});
 ```
 
