@@ -154,7 +154,7 @@ describe('scripts manager', function () {
   })
 
   describe('in process', function () {
-    var scriptsManager = new ScriptManagerInProcess()
+    var scriptsManager = new ScriptManagerInProcess({})
 
     beforeEach(function (done) {
       scriptsManager.ensureStarted(done)
@@ -165,6 +165,27 @@ describe('scripts manager', function () {
     })
 
     common(scriptsManager)
+
+    it('should handle timeouts', function (done) {
+      var timeouted = false
+
+      scriptsManager.execute({ foo: 'foo' },
+        {
+          execModulePath: path.join(__dirname, 'scripts', 'timeout.js'),
+          timeout: 10
+        }, function (err) {
+          if (err) {
+            timeouted = true
+            done()
+          }
+        })
+
+      setTimeout(function () {
+        if (!timeouted) {
+          done(new Error('It should timeout'))
+        }
+      }, 500)
+    })
   })
 
   function commonForSafeExecution (scriptsManager) {
