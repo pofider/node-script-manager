@@ -17,15 +17,15 @@ scriptManager.ensureStarted(function(err) {
 
 	/*send user's script including some other specific options into
 	wrapper specified by execModulePath*/
-	scriptManager.execute({	
+	scriptManager.execute({
 		script: "return 'Jan';"
-	}, { 
+	}, {
 		execModulePath: path.join(__dirname, "script.js"),
 	    timeout: 10
 	}, function(err, res) {
 		console.log(res);
 	});
-	
+
 });
 ```
 
@@ -41,14 +41,14 @@ module.exports = function(inputs, callback, done) {
 ```
 
 ##Callbacks
-The executing script can also callback to the caller process. The callback is provided using `node.js` cross process messages so it has some limitations, but should work when transferring just common objects in parameters. 
+The executing script can also callback to the caller process. The callback is provided using `node.js` cross process messages so it has some limitations, but should work when transferring just common objects in parameters.
 
 To provide caller callback you can add the `callback` property to the `execute` options:
 
 ```js
-scriptManager.execute({	
+scriptManager.execute({
 		script: "return 'Jan';"
-	}, { 
+	}, {
 		execModulePath: path.join(__dirname, "script.js"),
 	    callback: function(argA, argB, cb) {
 		    cb(null, "foo");
@@ -88,8 +88,8 @@ var scriptManager = require("script-manager")({
 		/* switch to use dedicated process for script evalution, this can help with
 		some issues caused by corporate proxies */
 		strategy: "http-server | dedicated-process | in-process",
-		/* options passed to forked node worker process: { execArgv: ['–-max-old-space-size=128'] } */
-		forkOptions: []
+		/* options passed to forked node worker process: { execArgv: ['ï¿½-max-old-space-size=128'] } */
+		forkOptions: {}
 	});
 ```
 
