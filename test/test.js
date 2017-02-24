@@ -1,284 +1,306 @@
-var should = require("should"),
-    path = require("path"),
-    ScriptsManager = require("../lib/manager-servers.js");
-    ScriptsManagerWithProcesses = require("../lib/manager-processes.js");
-    ScriptManagerInProcess = require("../lib/in-process.js");
+require('should')
+var path = require('path')
+var ScriptsManager = require('../lib/manager-servers.js')
+var ScriptsManagerWithProcesses = require('../lib/manager-processes.js')
+var ScriptManagerInProcess = require('../lib/in-process.js')
 
-describe("scripts manager", function () {
+describe('scripts manager', function () {
+  describe('servers', function () {
+    var scriptsManager = new ScriptsManager({numberOfWorkers: 2})
 
-    describe("servers", function () {
+    beforeEach(function (done) {
+      scriptsManager.ensureStarted(done)
+    })
 
-        var scriptsManager = new ScriptsManager({numberOfWorkers: 2});
-        beforeEach(function (done) {
-            scriptsManager.ensureStarted(done);
-        });
+    afterEach(function () {
+      scriptsManager.kill()
+    })
 
-        afterEach(function () {
-            scriptsManager.kill();
-        });
+    common(scriptsManager)
+    commonForSafeExecution(scriptsManager)
 
-        common(scriptsManager);
-        commonForSafeExecution(scriptsManager);
+    it('should be able to set up on custom port', function (done) {
+      var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000 })
 
-        it("should be able to set up on custom port", function (done) {
-            var scriptsManager2 = new ScriptsManager({numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000});
-            scriptsManager2.start(function(err) {
-                if (err)
-                    return done(err);
+      scriptsManager2.start(function (err) {
+        if (err) {
+          return done(err)
+        }
 
-                scriptsManager2.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
-                    if (err)
-                        return done(err);
+        scriptsManager2.execute({ foo: 'foo' }, {execModulePath: path.join(__dirname, 'scripts', 'script.js')}, function (err, res) {
+          if (err) {
+            return done(err)
+          }
 
-                    scriptsManager2.options.port.should.be.within(10000, 11000);
-                    res.foo.should.be.eql("foo");
-                    done();
-                });
-            });
-        });
+          scriptsManager2.options.port.should.be.within(10000, 11000)
+          res.foo.should.be.eql('foo')
+          done()
+        })
+      })
+    })
 
-        it("should be able to process high data volumes", function (done) {
-            this.timeout(7000);
-            var data = { foo: "foo", people: []};
-            for (var i = 0; i < 2000000; i++) {
-                data.people.push(i);
-            }
-            scriptsManager.execute(data, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
-                if (err)
-                    return done(err);
+    it('should be able to process high data volumes', function (done) {
+      this.timeout(7000)
 
-                res.foo.should.be.eql("foo");
-                done();
-            });
-        });
-    });
+      var data = { foo: 'foo', people: [] }
 
-    describe("servers with custom settings", function (){
-        it("should fail when input exceeds the inputRequestLimit", function (done) {
-            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 5});
-            scriptsManager.ensureStarted(function(err) {
-                if (err) {
-                    return done(err);
-                }
+      for (var i = 0; i < 2000000; i++) {
+        data.people.push(i)
+      }
 
-                scriptsManager.execute("foooooo", {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
-                    scriptsManager.kill();
-                    if (err) {
-                        return done();
-                    }
+      scriptsManager.execute(data, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
 
-                    done(new Error("It should have dailed"));
-                });
-            });
-        });
+        res.foo.should.be.eql('foo')
+        done()
+      })
+    })
+  })
 
-        it("should not fail when input is shorter the inputRequestLimit", function (done) {
-            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 500});
-            scriptsManager.ensureStarted(function(err) {
-                if (err) {
-                    return done(err);
-                }
+  describe('servers with custom settings', function () {
+    it('should fail when input exceeds the inputRequestLimit', function (done) {
+      var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 5})
 
-                scriptsManager.execute("foooooo", {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
-                    scriptsManager.kill();
-                    if (err) {
-                        return done(err);
-                    }
+      scriptsManager.ensureStarted(function (err) {
+        if (err) {
+          return done(err)
+        }
 
-                    done();
-                });
-            });
-        });
+        scriptsManager.execute('foooooo', {execModulePath: path.join(__dirname, 'scripts', 'script.js')}, function (err, res) {
+          scriptsManager.kill()
 
-        it("should be able to expose gc through args to dedicated process", function (done) {
-            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, strategy: 'dedicated-process', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } });
-            scriptsManager.ensureStarted(function(err) {
-                if (err) {
-                    return done(err);
-                }
+          if (err) {
+            return done()
+          }
 
-                scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
-                    if (err)
-                        return done(err);
+          done(new Error('It should have dailed'))
+        })
+      })
+    })
 
-                    res.foo.should.be.eql("foo");
-                    done();
-                });
-            });
-        });
+    it('should not fail when input is shorter the inputRequestLimit', function (done) {
+      var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 500})
 
-        it("should be able to expose gc through args to http server", function (done) {
-            var scriptsManager = new ScriptsManager({numberOfWorkers: 2, strategy: 'http-server', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } });
-            scriptsManager.ensureStarted(function(err) {
-                if (err) {
-                    return done(err);
-                }
+      scriptsManager.ensureStarted(function (err) {
+        if (err) {
+          return done(err)
+        }
 
-                scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "gc.js")}, function (err, res) {
-                    if (err)
-                        return done(err);
+        scriptsManager.execute('foooooo', {execModulePath: path.join(__dirname, 'scripts', 'script.js')}, function (err, res) {
+          scriptsManager.kill()
+          if (err) {
+            return done(err)
+          }
 
-                    res.foo.should.be.eql("foo");
-                    done();
-                });
-            });
-        });
-    });
+          done()
+        })
+      })
+    })
 
-    describe("processes", function () {
+    it('should be able to expose gc through args to dedicated process', function (done) {
+      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, strategy: 'dedicated-process', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } })
 
-        var scriptsManager = new ScriptsManagerWithProcesses({numberOfWorkers: 2});
-        beforeEach(function (done) {
-            scriptsManager.ensureStarted(done);
-        });
+      scriptsManager.ensureStarted(function (err) {
+        if (err) {
+          return done(err)
+        }
 
-        afterEach(function () {
-            scriptsManager.kill();
-        });
+        scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'gc.js') }, function (err, res) {
+          if (err) {
+            return done(err)
+          }
 
-        common(scriptsManager);
-        commonForSafeExecution(scriptsManager);
-    });
+          res.foo.should.be.eql('foo')
+          done()
+        })
+      })
+    })
 
-    describe("in process", function () {
+    it('should be able to expose gc through args to http server', function (done) {
+      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, strategy: 'http-server', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } })
 
-        var scriptsManager = new ScriptManagerInProcess();
-        beforeEach(function (done) {
-            scriptsManager.ensureStarted(done);
-        });
+      scriptsManager.ensureStarted(function (err) {
+        if (err) {
+          return done(err)
+        }
 
-        afterEach(function () {
-            scriptsManager.kill();
-        });
+        scriptsManager.execute({ foo: 'foo' }, {execModulePath: path.join(__dirname, 'scripts', 'gc.js')}, function (err, res) {
+          if (err) {
+            return done(err)
+          }
 
-        common(scriptsManager);
-    });
+          res.foo.should.be.eql('foo')
+          done()
+        })
+      })
+    })
+  })
 
-    function commonForSafeExecution(scriptsManager) {
-        it("should handle timeouts", function (done) {
-            var timeouted = false;
-            scriptsManager.execute({foo: "foo"},
-              {
-                  execModulePath: path.join(__dirname, "scripts", "timeout.js"),
-                  timeout: 10
-              }, function (err, res) {
-                  timeouted = true;
-                  done();
-              });
+  describe('processes', function () {
+    var scriptsManager = new ScriptsManagerWithProcesses({ numberOfWorkers: 2 })
 
-            setTimeout(function () {
-                if (!timeouted)
-                    done(new Error("It should timeout"));
+    beforeEach(function (done) {
+      scriptsManager.ensureStarted(done)
+    })
 
-            }, 500);
-        });
+    afterEach(function () {
+      scriptsManager.kill()
+    })
 
-        it("should handle unexpected error", function (done) {
-            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "unexpectedError.js")}, function (err, res) {
-                if (err)
-                    return done();
+    common(scriptsManager)
+    commonForSafeExecution(scriptsManager)
+  })
 
-                done(new Error("There should be an error"));
-            });
-        });
-    }
+  describe('in process', function () {
+    var scriptsManager = new ScriptManagerInProcess()
 
-    function common(scriptsManager) {
+    beforeEach(function (done) {
+      scriptsManager.ensureStarted(done)
+    })
 
-        it("should be able to execute simple script", function (done) {
-            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
-                if (err)
-                    return done(err);
+    afterEach(function () {
+      scriptsManager.kill()
+    })
 
-                res.foo.should.be.eql("foo");
-                done();
-            });
-        });
+    common(scriptsManager)
+  })
 
-        it("should handle script error", function (done) {
-            scriptsManager.execute({foo: "foo"}, {execModulePath: path.join(__dirname, "scripts", "error.js")}, function (err, res) {
-                if (!err)
-                    return done(new Error("It should have failed."));
+  function commonForSafeExecution (scriptsManager) {
+    it('should handle timeouts', function (done) {
+      var timeouted = false
 
-                err.stack.should.containEql("error.js");
-                done();
-            });
-        });
+      scriptsManager.execute({ foo: 'foo' },
+        {
+          execModulePath: path.join(__dirname, 'scripts', 'timeout.js'),
+          timeout: 10
+        }, function () {
+          timeouted = true
+          done()
+        })
 
-        it("should be able to callback to the caller", function (done) {
-            function callback(str, cb) {
-                cb(null, str + "aaa");
-            }
+      setTimeout(function () {
+        if (!timeouted) {
+          done(new Error('It should timeout'))
+        }
+      }, 500)
+    })
 
-            scriptsManager.execute({}, {
-                execModulePath: path.join(__dirname, "scripts", "callback.js"),
-                callback: callback
-            }, function (err, res) {
-                if (err)
-                    return done(err);
+    it('should handle unexpected error', function (done) {
+      scriptsManager.execute({ foo: 'foo' }, {execModulePath: path.join(__dirname, 'scripts', 'unexpectedError.js')}, function (err, res) {
+        if (err) {
+          return done()
+        }
 
-                res.test.should.be.eql("testaaa");
+        done(new Error('There should be an error'))
+      })
+    })
+  }
 
-                done();
-            });
-        });
+  function common (scriptsManager) {
+    it('should be able to execute simple script', function (done) {
+      scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
 
-        it("should be able to callback error to the caller", function (done) {
-            function callback(str, cb) {
-                cb(null, str + "aaa");
-            }
+        res.foo.should.be.eql('foo')
+        done()
+      })
+    })
 
-            scriptsManager.execute({}, {
-                execModulePath: path.join(__dirname, "scripts", "callbackError.js"),
-                callback: callback
-            }, function (err, res) {
-                if (err)
-                    return done();
+    it('should handle script error', function (done) {
+      scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'error.js') }, function (err, res) {
+        if (!err) {
+          return done(new Error('It should have failed.'))
+        }
 
-                done(new Error("It should have failed"));
-            });
-        });
+        err.stack.should.containEql('error.js')
+        done()
+      })
+    })
 
-        it("should be able to process parallel requests", function (done) {
-            function callback(str, cb) {
-                setTimeout(function() {
-                    cb(null, str + "aaa");
-                }, 10);
-            }
+    it('should be able to callback to the caller', function (done) {
+      function callback (str, cb) {
+        cb(null, str + 'aaa')
+      }
 
-            var doneCounter = [];
+      scriptsManager.execute({}, {
+        execModulePath: path.join(__dirname, 'scripts', 'callback.js'),
+        callback: callback
+      }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
 
-            for (var i = 0; i < 20; i++) {
-                scriptsManager.execute({}, {
-                    execModulePath: path.join(__dirname, "scripts", "callback.js"),
-                    callback: callback
-                }, function (err, res) {
-                    if (err)
-                        return done(err);
+        res.test.should.be.eql('testaaa')
 
-                    res.test.should.be.eql("testaaa");
-                    doneCounter++;
+        done()
+      })
+    })
 
-                    if (doneCounter === 20)
-                        done();
-                });
-            }
-        });
+    it('should be able to callback error to the caller', function (done) {
+      function callback (str, cb) {
+        cb(null, str + 'aaa')
+      }
 
-        it("should be able to execute script with giant input data", function (done) {
-            this.timeout(10000);
-            var foo = "xxx";
-            for (var i = 0; i < 1000000; i++) {
-                foo += "yyyyyyyyyyyyy";
-            }
-            scriptsManager.execute({foo: foo}, {execModulePath: path.join(__dirname, "scripts", "script.js")}, function (err, res) {
-                if (err)
-                    return done(err);
+      scriptsManager.execute({}, {
+        execModulePath: path.join(__dirname, 'scripts', 'callbackError.js'),
+        callback: callback
+      }, function (err, res) {
+        if (err) {
+          return done()
+        }
 
-                res.foo.should.be.eql(foo);
-                done();
-            });
-        });
-    }
-});
+        done(new Error('It should have failed'))
+      })
+    })
 
+    it('should be able to process parallel requests', function (done) {
+      function callback (str, cb) {
+        setTimeout(function () {
+          cb(null, str + 'aaa')
+        }, 10)
+      }
+
+      var doneCounter = []
+
+      for (var i = 0; i < 20; i++) {
+        scriptsManager.execute({}, {
+          execModulePath: path.join(__dirname, 'scripts', 'callback.js'),
+          callback: callback
+        }, function (err, res) {
+          if (err) {
+            return done(err)
+          }
+
+          res.test.should.be.eql('testaaa')
+          doneCounter++
+
+          if (doneCounter === 20) {
+            done()
+          }
+        })
+      }
+    })
+
+    it('should be able to execute script with giant input data', function (done) {
+      this.timeout(10000)
+      var foo = 'xxx'
+
+      for (var i = 0; i < 1000000; i++) {
+        foo += 'yyyyyyyyyyyyy'
+      }
+
+      scriptsManager.execute({ foo: foo }, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
+
+        res.foo.should.be.eql(foo)
+        done()
+      })
+    })
+  }
+})

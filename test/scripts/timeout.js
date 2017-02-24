@@ -1,3 +1,3 @@
-module.exports = function(inputs, callerCallback, done) {
+module.exports = function (inputs, callerCallback, done) {
 
-};
+}

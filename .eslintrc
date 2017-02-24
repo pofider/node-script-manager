@@ -1,0 +1,11 @@
+{
+  "extends": ["standard"],
+  "rules": {
+    "arrow-parens": 0
+  },
+  "env": {
+    "node": true,
+    "mocha": true,
+    "browser": true
+  }
+}

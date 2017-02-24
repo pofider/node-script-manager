@@ -17,6 +17,13 @@
     "type": "git",
     "url": "git@github.com:pofider/node-script-manager.git"
   },
+  "standard": {
+    "env": {
+      "node": true,
+      "mocha": true,
+      "browser": true
+    }
+  },
   "dependencies": {
     "net-cluster": "0.0.2",
     "portscanner": "1.0.0",
@@ -26,11 +33,15 @@
     "uuid": "2.0.1"
   },
   "devDependencies": {
-    "mocha": "2.1.0",
-    "should": "5.0.1"
+    "eslint": "3.15.0",
+    "in-publish": "2.0.0",
+    "mocha": "3.2.0",
+    "should": "11.2.0",
+    "standard": "8.6.0"
   },
   "scripts": {
-    "test": "mocha test/test.js"
+    "test": "mocha test/test.js && standard",
+    "prepublish": "in-publish && standard || not-in-publish"
   },
   "main": "index.js",
   "license": "MIT"
