@@ -26,18 +26,18 @@
   },
   "dependencies": {
     "net-cluster": "0.0.2",
-    "portscanner": "1.0.0",
-    "request": "2.53.0",
-    "string": "3.0.0",
-    "underscore": "1.8.2",
-    "uuid": "2.0.1"
+    "portscanner": "2.1.1",
+    "request": "2.80.0",
+    "string": "3.3.3",
+    "underscore": "1.8.3",
+    "uuid": "3.0.1"
   },
   "devDependencies": {
-    "eslint": "3.15.0",
+    "eslint": "3.17.1",
     "in-publish": "2.0.0",
     "mocha": "3.2.0",
     "should": "11.2.0",
-    "standard": "8.6.0"
+    "standard": "9.0.1"
   },
   "scripts": {
     "test": "mocha test/test.js && standard",
