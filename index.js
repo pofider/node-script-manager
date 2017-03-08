@@ -9,7 +9,7 @@ function updateProcessArgs () {
 }
 
 module.exports = function (_options) {
-  var options = options || {}
+  var options = _options || {}
 
   options.timeout = options.timeout || 10000
   options.strategy = options.strategy || 'http-server'
