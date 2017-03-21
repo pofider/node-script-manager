@@ -1,4 +1,4 @@
-#script-manager
+# script-manager
 [![NPM Version](http://img.shields.io/npm/v/script-manager.svg?style=flat-square)](https://npmjs.com/package/script-manager)
 [![License](http://img.shields.io/npm/l/script-manager.svg?style=flat-square)](http://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/pofider/node-script-manager.png?branch=master)](https://travis-ci.org/pofider/node-script-manager)
@@ -6,7 +6,7 @@
 **node.js manager for running foreign and potentially dangerous scripts in the cluster**
 
 
-##Basics
+## Basics
 
 You can use node.js vm module for running a custom javascript code, but when the code is bad it can quickly get your node.js process into an endless loop. For this reason it is better to run users's custom code in a separate node process which you can recycle when the script reaches timeout. This can be achieved using node child_process module, but a simple implementation has limitations in performance and scale because running each script in a new node child process can quickly spawn whole system with node processes. This package solves the problem of running user's custom javascript code in a load balanced cluster of node processes which are reused over the requests and recycled when needed.
 
@@ -40,7 +40,7 @@ module.exports = function(inputs, callback, done) {
 });
 ```
 
-##Callbacks
+## Callbacks
 The executing script can also callback to the caller process. The callback is provided using `node.js` cross process messages so it has some limitations, but should work when transferring just common objects in parameters.
 
 To provide caller callback you can add the `callback` property to the `execute` options:
@@ -72,7 +72,7 @@ module.exports = function(inputs, callback, done) {
 });
 ```
 
-##Options
+## Options
 
 ```js
 var scriptManager = require("script-manager")({
@@ -94,5 +94,5 @@ var scriptManager = require("script-manager")({
 ```
 
 
-##License
+## License
 See [license](https://github.com/pofider/node-script-manager/blob/master/LICENSE)
