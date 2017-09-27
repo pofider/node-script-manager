@@ -27,7 +27,7 @@
   "dependencies": {
     "net-cluster": "0.0.2",
     "portscanner": "2.1.1",
-    "request": "2.83.0",
+    "request": "2.80.0",
     "string": "3.3.3",
     "underscore": "1.8.3",
     "uuid": "3.1.0"
