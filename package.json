@@ -27,20 +27,20 @@
   "dependencies": {
     "net-cluster": "0.0.2",
     "portscanner": "2.1.1",
-    "request": "2.80.0",
+    "request": "2.83.0",
     "string": "3.3.3",
     "underscore": "1.8.3",
     "uuid": "3.1.0"
   },
   "devDependencies": {
-    "eslint": "4.7.2",
+    "eslint": "4.10.0",
     "in-publish": "2.0.0",
-    "mocha": "3.5.3",
-    "should": "13.1.0",
+    "mocha": "4.0.1",
+    "should": "13.1.3",
     "standard": "10.0.3"
   },
   "scripts": {
-    "test": "mocha test/test.js --timeout 5000 && standard",
+    "test": "mocha test/test.js --timeout 5000 --exit && standard",
     "prepublish": "in-publish && standard || not-in-publish"
   },
   "main": "index.js",
