@@ -40,8 +40,6 @@ describe('scripts manager', function () {
     })
 
     it('should be able to process high data volumes', function (done) {
-      this.timeout(7000)
-
       var data = { foo: 'foo', people: [] }
 
       for (var i = 0; i < 2000000; i++) {
@@ -307,7 +305,6 @@ describe('scripts manager', function () {
     })
 
     it('should be able to execute script with giant input data', function (done) {
-      this.timeout(20000)
       var foo = 'xxx'
 
       for (var i = 0; i < 1000000; i++) {
