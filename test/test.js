@@ -276,6 +276,38 @@ describe('scripts manager', function () {
       })
     })
 
+    it('should not call callback after timeout error', function (done) {
+      let resolved = 0
+
+      function callback (str, cb) {
+        setTimeout(() => {
+          cb(null, str + '(callback executed)')
+        }, 400)
+      }
+
+      scriptsManager.execute({}, {
+        execModulePath: path.join(__dirname, 'scripts', 'callback.js'),
+        timeout: 200,
+        callback: callback
+      }, function (err, res) {
+        if (resolved > 0) {
+          resolved++
+          return
+        }
+
+        if (resolved === 0) {
+          err.message.should.containEql('Timeout')
+        }
+
+        resolved++
+
+        setTimeout(() => {
+          resolved.should.be.eql(1)
+          done()
+        }, 1000)
+      })
+    })
+
     it('should be able to process parallel requests', function (done) {
       function callback (str, cb) {
         setTimeout(function () {
