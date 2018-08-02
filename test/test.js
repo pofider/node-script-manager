@@ -277,7 +277,7 @@ describe('scripts manager', function () {
     })
 
     it('should not call callback after timeout error', function (done) {
-      let resolved = 0
+      var resolved = 0
 
       function callback (str, cb) {
         setTimeout(() => {
