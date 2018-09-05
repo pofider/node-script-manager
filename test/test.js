@@ -1,4 +1,4 @@
-require('should')
+var should = require('should')
 var path = require('path')
 var ScriptsManager = require('../lib/manager-servers.js')
 var ScriptsManagerWithProcesses = require('../lib/manager-processes.js')
@@ -6,7 +6,7 @@ var ScriptManagerInProcess = require('../lib/in-process.js')
 
 describe('scripts manager', function () {
   describe('servers', function () {
-    var scriptsManager = new ScriptsManager({numberOfWorkers: 2})
+    var scriptsManager = new ScriptsManager({ numberOfWorkers: 2 })
 
     beforeEach(function (done) {
       scriptsManager.ensureStarted(done)
@@ -27,7 +27,9 @@ describe('scripts manager', function () {
           return done(err)
         }
 
-        scriptsManager2.execute({ foo: 'foo' }, {execModulePath: path.join(__dirname, 'scripts', 'script.js')}, function (err, res) {
+        scriptsManager2.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+          scriptsManager2.kill()
+
           if (err) {
             return done(err)
           }
@@ -59,14 +61,14 @@ describe('scripts manager', function () {
 
   describe('servers with custom settings', function () {
     it('should fail when input exceeds the inputRequestLimit', function (done) {
-      var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 5})
+      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, inputRequestLimit: 5 })
 
       scriptsManager.ensureStarted(function (err) {
         if (err) {
           return done(err)
         }
 
-        scriptsManager.execute('foooooo', {execModulePath: path.join(__dirname, 'scripts', 'script.js')}, function (err, res) {
+        scriptsManager.execute('foooooo', { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
           scriptsManager.kill()
 
           if (err) {
@@ -79,15 +81,16 @@ describe('scripts manager', function () {
     })
 
     it('should not fail when input is shorter the inputRequestLimit', function (done) {
-      var scriptsManager = new ScriptsManager({numberOfWorkers: 2, inputRequestLimit: 500})
+      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, inputRequestLimit: 500 })
 
       scriptsManager.ensureStarted(function (err) {
         if (err) {
           return done(err)
         }
 
-        scriptsManager.execute('foooooo', {execModulePath: path.join(__dirname, 'scripts', 'script.js')}, function (err, res) {
+        scriptsManager.execute('foooooo', { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
           scriptsManager.kill()
+
           if (err) {
             return done(err)
           }
@@ -106,6 +109,8 @@ describe('scripts manager', function () {
         }
 
         scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'gc.js') }, function (err, res) {
+          scriptsManager.kill()
+
           if (err) {
             return done(err)
           }
@@ -124,7 +129,9 @@ describe('scripts manager', function () {
           return done(err)
         }
 
-        scriptsManager.execute({ foo: 'foo' }, {execModulePath: path.join(__dirname, 'scripts', 'gc.js')}, function (err, res) {
+        scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'gc.js') }, function (err, res) {
+          scriptsManager.kill()
+
           if (err) {
             return done(err)
           }
@@ -207,7 +214,7 @@ describe('scripts manager', function () {
     })
 
     it('should handle unexpected error', function (done) {
-      scriptsManager.execute({ foo: 'foo' }, {execModulePath: path.join(__dirname, 'scripts', 'unexpectedError.js')}, function (err, res) {
+      scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'unexpectedError.js') }, function (err, res) {
         if (err) {
           return done()
         }
@@ -236,6 +243,93 @@ describe('scripts manager', function () {
         }
 
         err.stack.should.containEql('error.js')
+        done()
+      })
+    })
+
+    it('should be able to handle date values', function (done) {
+      scriptsManager.execute({
+        date: new Date('2018-09-01')
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'useDate.js')
+      }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
+
+        res.date.getTime().should.be.eql(res.dateInTime)
+        done()
+      })
+    })
+
+    it('should be able to handle date values (callback)', function (done) {
+      var callback = function (newData, cb) {
+        cb(null, Object.assign({}, newData, {
+          internalDateInTime: newData.internalDate.getTime()
+        }))
+      }
+
+      scriptsManager.execute({
+        useCallback: true,
+        date: new Date('2018-09-01')
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'useDate.js'),
+        callback: callback
+      }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
+
+        res.date.should.be.Date()
+        res.date.getTime().should.be.eql(res.dateInTime)
+        res.internalDate.should.be.Date()
+        res.internalDate.getTime().should.be.eql(res.internalDateInTime)
+        done()
+      })
+    })
+
+    it('should be able to handle buffer values', function (done) {
+      scriptsManager.execute({
+        buf: Buffer.from('hello')
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'useBuffer.js')
+      }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
+
+        should(Buffer.isBuffer(res.buf)).be.true()
+        res.bufInText.should.be.eql('hello')
+        should(Buffer.isBuffer(res.responseBuf)).be.true()
+        res.responseBuf.toString().should.be.eql('hello world')
+        done()
+      })
+    })
+
+    it('should be able to handle buffer values (callback)', function (done) {
+      var callback = function (newData, cb) {
+        cb(null, Object.assign({}, newData, {
+          receivedBufInText: newData.receivedBuf.toString()
+        }))
+      }
+
+      scriptsManager.execute({
+        useCallback: true,
+        buf: Buffer.from('hello')
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'useBuffer.js'),
+        callback: callback
+      }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
+
+        should(Buffer.isBuffer(res.buf)).be.true()
+        res.bufInText.should.be.eql('hello')
+        should(Buffer.isBuffer(res.responseBuf)).be.true()
+        res.responseBuf.toString().should.be.eql('hello world')
+        should(Buffer.isBuffer(res.receivedBuf)).be.true()
+        res.receivedBufInText.should.be.eql('secret message')
         done()
       })
     })
