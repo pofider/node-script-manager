@@ -1,11 +1,6 @@
-var _ = require('underscore')
-var S = require('string')
-
 function updateProcessArgs () {
   // fix freeze during debugging
-  process.execArgv = _.filter(process.execArgv, function (arg) {
-    return !S(arg).startsWith('--debug')
-  })
+  process.execArgv = process.execArgv.filter(a => a == null || !a.startsWith('--debug'))
 }
 
 module.exports = function (_options) {
