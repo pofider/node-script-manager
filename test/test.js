@@ -370,6 +370,17 @@ describe('scripts manager', function () {
       })
     })
 
+    it('should be able to customize message when timeout error', function (done) {
+      scriptsManager.execute({ foo: 'foo' }, {
+        execModulePath: path.join(__dirname, 'scripts', 'timeout.js'),
+        timeout: 10,
+        timeoutErrorMessage: 'Timeout testing case'
+      }, function (err) {
+        err.message.should.be.eql('Timeout testing case')
+        done()
+      })
+    })
+
     it('should not call callback after timeout error', function (done) {
       var resolved = 0
 
