@@ -1,6 +1,6 @@
 function updateProcessArgs () {
   // fix freeze during debugging
-  process.execArgv = process.execArgv.filter(a => a == null || !a.startsWith('--debug'))
+  process.execArgv = process.execArgv.filter(a => a == null || (!a.startsWith('--debug') && !a.startsWith('--inspect')))
 }
 
 module.exports = function (_options) {
