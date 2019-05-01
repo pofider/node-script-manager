@@ -370,6 +370,28 @@ describe('scripts manager', function () {
       })
     })
 
+    it('should be able to handle parallel callback calls', function (done) {
+      var callback = function (name, cb) {
+        cb(null, 'hi ' + name)
+      }
+
+      scriptsManager.execute({
+        name: 'Boris'
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'parallelCallbackCalls.js'),
+        callback: callback
+      }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
+
+        res[0].should.be.eql('hi Boris Matos')
+        res[1].should.be.eql('hi Boris Morillo')
+
+        done()
+      })
+    })
+
     it('should be able to customize message when timeout error', function (done) {
       scriptsManager.execute({ foo: 'foo' }, {
         execModulePath: path.join(__dirname, 'scripts', 'timeout.js'),
