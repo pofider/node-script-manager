@@ -11,6 +11,7 @@
 You can use node.js vm module for running a custom javascript code, but when the code is bad it can quickly get your node.js process into an endless loop. For this reason it is better to run users's custom code in a separate node process which you can recycle when the script reaches timeout. This can be achieved using node child_process module, but a simple implementation has limitations in performance and scale because running each script in a new node child process can quickly spawn whole system with node processes. This package solves the problem of running user's custom javascript code in a load balanced cluster of node processes which are reused over the requests and recycled when needed.
 
 ```js
+var path = require('path')
 var scriptManager = require("script-manager")({ numberOfWorkers: 2 });
 
 scriptManager.ensureStarted(function(err) {
@@ -23,6 +24,10 @@ scriptManager.ensureStarted(function(err) {
 		execModulePath: path.join(__dirname, "script.js"),
 	    timeout: 10
 	}, function(err, res) {
+		if (err) {
+			return console.error('Error:', err)
+		}
+
 		console.log(res);
 	});
 
@@ -36,8 +41,8 @@ module.exports = function(inputs, callback, done) {
 	var result = require('vm').runInNewContext(inputs.script, {
 		require: function() { throw new Error("Not supported"); }
 	});
-	done(result);
-});
+	done(null result);
+};
 ```
 
 ## Callbacks

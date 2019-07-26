@@ -1,5 +1,6 @@
 var should = require('should')
 var path = require('path')
+var request = require('request')
 var ScriptsManager = require('../lib/manager-servers.js')
 var ScriptsManagerWithProcesses = require('../lib/manager-processes.js')
 var ScriptManagerInProcess = require('../lib/in-process.js')
@@ -18,6 +19,34 @@ describe('scripts manager', function () {
 
     common(scriptsManager)
     commonForSafeExecution(scriptsManager)
+
+    it('should not be able to process request directly to worker', function (done) {
+      var port = 20001
+      var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1, portLeftBoundary: port, portRightBoundary: port })
+
+      scriptsManager2.start(function (err) {
+        if (err) {
+          return done(err)
+        }
+
+        request.post({
+          url: 'http://localhost:' + port,
+          json: {
+            options: {
+              rid: 12,
+              execModulePath: path.join(__dirname, 'scripts', 'invalid.js')
+            }
+          }
+        }, (err, req, body) => {
+          if (err) {
+            return done(err)
+          }
+
+          body.error.message.should.be.eql('Bad request')
+          done()
+        })
+      })
+    })
 
     it('should be able to set up on custom port', function (done) {
       var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000 })
