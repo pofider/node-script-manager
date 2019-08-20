@@ -88,7 +88,7 @@ var scriptManager = require("script-manager")({
 		/* set a specific port range for script execution server */
 		portLeftBoundary: 1000,
 		portRightBoundary: 2000,
-		/* maximum size of message sent/received from/to worker in http-server strategy*/
+		/* maximum size of message sent/received from/to worker in http-server strategy, pass -1 to have no limit*/
 		inputRequestLimit: 200e6,
 		/* switch to use dedicated process for script evalution, this can help with
 		some issues caused by corporate proxies */
