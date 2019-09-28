@@ -40,6 +40,29 @@ describe('scripts manager', function () {
       })
     })
 
+    it('should work after process recycles', function (done) {
+      var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1 })
+
+      scriptsManager2.ensureStarted(function () {
+        scriptsManager2.execute({}, { execModulePath: path.join(__dirname, 'scripts', 'unexpectedError.js') }, function (err, res) {
+          if (!err) {
+            scriptsManager2.kill()
+            done(new Error('should have failed'))
+          }
+
+          scriptsManager2.execute({}, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+            if (err) {
+              scriptsManager2.kill()
+              return done(err)
+            }
+
+            scriptsManager2.kill()
+            done()
+          })
+        })
+      })
+    })
+
     it('should be able to set up on custom port', function (done) {
       var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000 })
 
