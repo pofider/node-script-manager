@@ -21,30 +21,22 @@ describe('scripts manager', function () {
     commonForSafeExecution(scriptsManager)
 
     it('should not be able to process request directly to worker', function (done) {
-      var port = 20001
-      var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1, portLeftBoundary: port, portRightBoundary: port })
-
-      scriptsManager2.start(function (err) {
+      request.post({
+        url: 'http://localhost:' + scriptsManager.options.port,
+        json: {
+          options: {
+            rid: 12,
+            wcid: 'invalid',
+            execModulePath: path.join(__dirname, 'scripts', 'script.js')
+          }
+        }
+      }, (err, req, body) => {
         if (err) {
           return done(err)
         }
 
-        request.post({
-          url: 'http://localhost:' + port,
-          json: {
-            options: {
-              rid: 12,
-              execModulePath: path.join(__dirname, 'scripts', 'invalid.js')
-            }
-          }
-        }, (err, req, body) => {
-          if (err) {
-            return done(err)
-          }
-
-          body.error.message.should.be.eql('Bad request')
-          done()
-        })
+        body.error.message.should.be.eql('Bad request')
+        done()
       })
     })
 
