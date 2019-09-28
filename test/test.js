@@ -50,15 +50,18 @@ describe('scripts manager', function () {
             done(new Error('should have failed'))
           }
 
-          scriptsManager2.execute({}, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
-            if (err) {
-              scriptsManager2.kill()
-              return done(err)
-            }
+          // seems we need to wait a bit until it is restarted fully?
+          setTimeout(function () {
+            scriptsManager2.execute({}, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+              if (err) {
+                scriptsManager2.kill()
+                return done(err)
+              }
 
-            scriptsManager2.kill()
-            done()
-          })
+              scriptsManager2.kill()
+              done()
+            })
+          }, 100)
         })
       })
     })
