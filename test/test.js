@@ -482,6 +482,19 @@ describe('scripts manager', function () {
       })
     })
 
+    it('should be able to differenciate between error and data with error property', function (done) {
+      scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'okWithErrorProperty.js') }, function (err, res) {
+        if (err) {
+          return done(new Error('script should not fail with error'))
+        }
+
+        res.error.message.should.be.eql('custom')
+        res.error.stack.should.be.eql('custom stack')
+
+        done()
+      })
+    })
+
     it('should be able to process parallel requests', function (done) {
       function callback (str, cb) {
         setTimeout(function () {
