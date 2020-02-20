@@ -1,6 +1,6 @@
 var should = require('should')
 var path = require('path')
-var request = require('request')
+var axios = require('axios')
 var ScriptsManager = require('../lib/manager-servers.js')
 var ScriptsManagerWithProcesses = require('../lib/manager-processes.js')
 var ScriptManagerInProcess = require('../lib/in-process.js')
@@ -21,22 +21,25 @@ describe('scripts manager', function () {
     commonForSafeExecution(scriptsManager)
 
     it('should not be able to process request directly to worker', function (done) {
-      request.post({
+      axios({
+        method: 'post',
         url: 'http://localhost:' + scriptsManager.options.port,
-        json: {
+        data: {
           options: {
             rid: 12,
             wcid: 'invalid',
             execModulePath: path.join(__dirname, 'scripts', 'script.js')
           }
         }
-      }, (err, req, body) => {
-        if (err) {
-          return done(err)
+      }).then((response) => {
+        done(new Error('Request should not be able to end successfully'))
+      }).catch((err) => {
+        if (err.response) {
+          err.response.data.error.message.should.be.eql('Bad request')
+          done()
+        } else {
+          done(err)
         }
-
-        body.error.message.should.be.eql('Bad request')
-        done()
       })
     })
 

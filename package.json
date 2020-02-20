@@ -25,7 +25,7 @@
     }
   },
   "dependencies": {
-    "request": "2.88.0",
+    "axios": "0.19.2",
     "serializator": "1.0.1",
     "uuid": "3.3.2"
   },
