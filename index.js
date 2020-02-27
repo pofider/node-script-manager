@@ -4,7 +4,7 @@ function updateProcessArgs () {
 }
 
 module.exports = function (_options) {
-  var options = _options || {}
+  var options = Object.assign({}, _options)
 
   options.timeout = options.timeout || 10000
   options.strategy = options.strategy || 'http-server'
