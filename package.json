@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "axios": "0.19.2",
-    "serializator": "1.0.1",
+    "serializator": "github:jsreport/serializator",
     "uuid": "3.3.2"
   },
   "devDependencies": {
