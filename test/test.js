@@ -485,6 +485,24 @@ describe('scripts manager', function () {
       })
     })
 
+    it('should not break when callback is called after script ends execution', function (done) {
+      const callback = (str, cb) => {
+        cb()
+      }
+
+      scriptsManager.execute({}, {
+        execModulePath: path.join(__dirname, 'scripts', 'callbackAfterEnd.js'),
+        callback: callback
+      }, (err, res) => {
+        if (err) {
+          return done(err)
+        }
+
+        res.ok.should.be.True()
+        setTimeout(() => { done() }, 500)
+      })
+    })
+
     it('should be able to differenciate between error and data with error property', function (done) {
       scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'okWithErrorProperty.js') }, function (err, res) {
         if (err) {
