@@ -23,6 +23,10 @@ module.exports = function (_options) {
     return new (require('./lib/in-process.js'))(options)
   }
 
+  if (options.strategy === 'worker-threads') {
+    return new (require('./lib/manager-threads.js'))(options)
+  }
+
   throw new Error('Unsupported scripts manager strategy: ' + options.strategy)
 }
 
