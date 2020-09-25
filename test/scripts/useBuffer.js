@@ -1,5 +1,5 @@
 module.exports = function (inputs, callbackResponse, done) {
-  inputs.bufInText = inputs.buf.toString()
+  inputs.bufInText = Buffer.from(inputs.buf).toString()
   inputs.responseBuf = Buffer.from(inputs.bufInText + ' world')
 
   if (inputs.useCallback) {

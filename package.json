@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "axios": "0.19.2",
-    "serializator": "1.0.2",
+    "piscina": "1.6.3",
+    "serializator": "github:jsreport/serializator#v3",
     "uuid": "3.3.2"
   },
   "devDependencies": {
@@ -39,6 +40,9 @@
   "scripts": {
     "test": "mocha test/test.js --timeout 20000 --exit && standard",
     "prepublish": "in-publish && standard || not-in-publish"
+  },
+  "engines": {
+    "node": ">=14.12"
   },
   "main": "index.js",
   "license": "MIT"

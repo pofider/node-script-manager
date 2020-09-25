@@ -81,7 +81,7 @@ module.exports = function(inputs, callback, done) {
 
 ```js
 var scriptManager = require("script-manager")({
- 		/* number of worker node.js processes */
+ 		/* number of worker node.js processes when using worker-threads or http-server strategy */
 		numberOfWorkers: 2,
 		/* set a custom hostname on which script execution server is started, useful is cloud environments where you need to set specific IP */
 		host: '127.0.0.1',
@@ -90,9 +90,9 @@ var scriptManager = require("script-manager")({
 		portRightBoundary: 2000,
 		/* maximum size of message sent/received from/to worker in http-server strategy, pass -1 to have no limit*/
 		inputRequestLimit: 200e6,
-		/* switch to use dedicated process for script evalution, this can help with
+		/* switch to use dedicated process for script evaluation, this can help with
 		some issues caused by corporate proxies */
-		strategy: "http-server | dedicated-process | in-process",
+		strategy: "worker-threads | http-server | dedicated-process | in-process",
 		/* options passed to forked node worker process: { execArgv: ['�-max-old-space-size=128'] } */
 		forkOptions: {}
 	});

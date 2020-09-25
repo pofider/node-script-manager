@@ -7,7 +7,7 @@ module.exports = function (_options) {
   var options = Object.assign({}, _options)
 
   options.timeout = options.timeout || 10000
-  options.strategy = options.strategy || 'http-server'
+  options.strategy = options.strategy || 'worker-threads'
 
   if (options.strategy === 'http-server') {
     updateProcessArgs()

@@ -1,13 +1,72 @@
 var should = require('should')
 var path = require('path')
 var axios = require('axios')
-var ScriptsManager = require('../lib/manager-servers.js')
+var ScriptsManagerWithThreads = require('../lib/manager-threads.js')
+var ScriptsManagerWithHttpServer = require('../lib/manager-servers.js')
 var ScriptsManagerWithProcesses = require('../lib/manager-processes.js')
 var ScriptManagerInProcess = require('../lib/in-process.js')
 
 describe('scripts manager', function () {
+  describe('threads', function () {
+    const scriptsManager = new ScriptsManagerWithThreads({ numberOfWorkers: 2 })
+
+    beforeEach(function (done) {
+      scriptsManager.ensureStarted(done)
+    })
+
+    afterEach(function () {
+      scriptsManager.kill()
+    })
+
+    common(scriptsManager)
+    commonForSafeExecution(scriptsManager)
+
+    it('should work after process recycles', function (done) {
+      var scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
+
+      scriptsManager2.ensureStarted(function () {
+        scriptsManager2.execute({}, { execModulePath: path.join(__dirname, 'scripts', 'unexpectedError.js') }, function (err, res) {
+          if (!err) {
+            scriptsManager2.kill()
+            return done(new Error('should have failed'))
+          }
+
+          // seems we need to wait a bit until it is restarted fully?
+          setTimeout(function () {
+            scriptsManager2.execute({}, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+              if (err) {
+                scriptsManager2.kill()
+                return done(err)
+              }
+
+              scriptsManager2.kill()
+              done()
+            })
+          }, 100)
+        })
+      })
+    })
+
+    it('should be able to process high data volumes', function (done) {
+      var data = { foo: 'foo', people: [] }
+
+      for (var i = 0; i < 2000000; i++) {
+        data.people.push(i)
+      }
+
+      scriptsManager.execute(data, { execModulePath: path.join(__dirname, 'scripts', 'script.js') }, function (err, res) {
+        if (err) {
+          return done(err)
+        }
+
+        res.foo.should.be.eql('foo')
+        done()
+      })
+    })
+  })
+
   describe('servers', function () {
-    var scriptsManager = new ScriptsManager({ numberOfWorkers: 2 })
+    var scriptsManager = new ScriptsManagerWithHttpServer({ numberOfWorkers: 2 })
 
     beforeEach(function (done) {
       scriptsManager.ensureStarted(done)
@@ -44,13 +103,13 @@ describe('scripts manager', function () {
     })
 
     it('should work after process recycles', function (done) {
-      var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1 })
+      var scriptsManager2 = new ScriptsManagerWithHttpServer({ numberOfWorkers: 1 })
 
       scriptsManager2.ensureStarted(function () {
         scriptsManager2.execute({}, { execModulePath: path.join(__dirname, 'scripts', 'unexpectedError.js') }, function (err, res) {
           if (!err) {
             scriptsManager2.kill()
-            done(new Error('should have failed'))
+            return done(new Error('should have failed'))
           }
 
           // seems we need to wait a bit until it is restarted fully?
@@ -70,7 +129,7 @@ describe('scripts manager', function () {
     })
 
     it('should be able to set up on custom port', function (done) {
-      var scriptsManager2 = new ScriptsManager({ numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000 })
+      var scriptsManager2 = new ScriptsManagerWithHttpServer({ numberOfWorkers: 1, portLeftBoundary: 10000, portRightBoundary: 11000 })
 
       scriptsManager2.start(function (err) {
         if (err) {
@@ -111,7 +170,7 @@ describe('scripts manager', function () {
 
   describe('servers with custom settings', function () {
     it('should fail when input exceeds the inputRequestLimit', function (done) {
-      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, inputRequestLimit: 5 })
+      var scriptsManager = new ScriptsManagerWithHttpServer({ numberOfWorkers: 2, inputRequestLimit: 5 })
 
       scriptsManager.ensureStarted(function (err) {
         if (err) {
@@ -131,7 +190,7 @@ describe('scripts manager', function () {
     })
 
     it('should not fail when input is shorter the inputRequestLimit', function (done) {
-      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, inputRequestLimit: 500 })
+      var scriptsManager = new ScriptsManagerWithHttpServer({ numberOfWorkers: 2, inputRequestLimit: 500 })
 
       scriptsManager.ensureStarted(function (err) {
         if (err) {
@@ -151,7 +210,7 @@ describe('scripts manager', function () {
     })
 
     it('should be able to expose gc through args to dedicated process', function (done) {
-      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, strategy: 'dedicated-process', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } })
+      var scriptsManager = new ScriptsManagerWithHttpServer({ numberOfWorkers: 2, strategy: 'dedicated-process', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } })
 
       scriptsManager.ensureStarted(function (err) {
         if (err) {
@@ -172,7 +231,7 @@ describe('scripts manager', function () {
     })
 
     it('should be able to expose gc through args to http server', function (done) {
-      var scriptsManager = new ScriptsManager({ numberOfWorkers: 2, strategy: 'http-server', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } })
+      var scriptsManager = new ScriptsManagerWithHttpServer({ numberOfWorkers: 2, strategy: 'http-server', inputRequestLimit: 500, forkOptions: { execArgv: ['--expose-gc'] } })
 
       scriptsManager.ensureStarted(function (err) {
         if (err) {
@@ -348,10 +407,10 @@ describe('scripts manager', function () {
           return done(err)
         }
 
-        should(Buffer.isBuffer(res.buf)).be.true()
+        should(res.buf.buffer != null).be.true()
         res.bufInText.should.be.eql('hello')
-        should(Buffer.isBuffer(res.responseBuf)).be.true()
-        res.responseBuf.toString().should.be.eql('hello world')
+        should(res.responseBuf.buffer != null).be.true()
+        Buffer.from(res.responseBuf).toString().should.be.eql('hello world')
         done()
       })
     })
@@ -359,7 +418,7 @@ describe('scripts manager', function () {
     it('should be able to handle buffer values (callback)', function (done) {
       var callback = function (newData, cb) {
         cb(null, Object.assign({}, newData, {
-          receivedBufInText: newData.receivedBuf.toString()
+          receivedBufInText: Buffer.from(newData.receivedBuf).toString()
         }))
       }
 
@@ -374,11 +433,11 @@ describe('scripts manager', function () {
           return done(err)
         }
 
-        should(Buffer.isBuffer(res.buf)).be.true()
+        should(res.buf.buffer != null).be.true()
         res.bufInText.should.be.eql('hello')
-        should(Buffer.isBuffer(res.responseBuf)).be.true()
-        res.responseBuf.toString().should.be.eql('hello world')
-        should(Buffer.isBuffer(res.receivedBuf)).be.true()
+        should(res.responseBuf.buffer != null).be.true()
+        Buffer.from(res.responseBuf).toString().should.be.eql('hello world')
+        should(res.receivedBuf.buffer != null).be.true()
         res.receivedBufInText.should.be.eql('secret message')
         done()
       })
