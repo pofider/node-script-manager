@@ -123,7 +123,7 @@ describe('scripts manager', function () {
               scriptsManager2.kill()
               done()
             })
-          }, 100)
+          }, 200)
         })
       })
     })
