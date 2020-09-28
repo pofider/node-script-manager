@@ -21,6 +21,50 @@ describe('scripts manager', function () {
     common(scriptsManager)
     commonForSafeExecution(scriptsManager)
 
+    it.only('shouldnt stuck in deadlocks', function (done) {
+      var scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
+      let isDone = false
+
+      scriptsManager2.ensureStarted(function () {
+        var callback = function (newData, cb) {
+          scriptsManager2.execute({ foo: 'foo' }, {
+            execModulePath: path.join(__dirname, 'scripts', 'script.js'),
+            timeout: 100
+          }, function (err, res) {
+            if (err) {
+              if (isDone) {
+                return
+              }
+              scriptsManager2.kill()
+              isDone = true
+              return done(err)
+            }
+
+            cb()
+          })
+        }
+
+        scriptsManager2.execute({
+          useCallback: true
+        }, {
+          execModulePath: path.join(__dirname, 'scripts', 'callback.js'),
+          callback: callback
+        }, function (err, res) {
+          if (err) {
+            if (isDone) {
+              return
+            }
+            isDone = true
+            scriptsManager2.kill()
+            return done(err)
+          }
+
+          scriptsManager2.kill()
+          done()
+        })
+      })
+    })
+
     it('should work after process recycles', function (done) {
       var scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
 
