@@ -21,7 +21,7 @@ describe('scripts manager', function () {
     common(scriptsManager)
     commonForSafeExecution(scriptsManager)
 
-    it.only('shouldnt stuck in deadlocks', function (done) {
+    it('shouldnt stuck in deadlocks', function (done) {
       var scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
       let isDone = false
 
