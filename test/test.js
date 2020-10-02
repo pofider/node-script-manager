@@ -1,5 +1,6 @@
 var should = require('should')
 var path = require('path')
+const uuid = require('uuid').v4
 var axios = require('axios')
 var ScriptsManagerWithThreads = require('../lib/manager-threads.js')
 var ScriptsManagerWithHttpServer = require('../lib/manager-servers.js')
@@ -8,7 +9,9 @@ var ScriptManagerInProcess = require('../lib/in-process.js')
 
 describe('scripts manager', function () {
   describe('threads', function () {
-    const scriptsManager = new ScriptsManagerWithThreads({ numberOfWorkers: 2 })
+    const scriptsManager = new ScriptsManagerWithThreads({
+      numberOfWorkers: 2
+    })
 
     beforeEach(function (done) {
       scriptsManager.ensureStarted(done)
@@ -21,47 +24,244 @@ describe('scripts manager', function () {
     common(scriptsManager)
     commonForSafeExecution(scriptsManager)
 
-    it('shouldnt stuck in deadlocks', function (done) {
-      var scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
+    it('should handle concurrent tasks that are about to initialize the same thread (using reservation api)', function (done) {
+      const scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
+
+      scriptsManager2.ensureStarted((err) => {
+        if (err) {
+          return done(err)
+        }
+
+        const taskId = uuid()
+
+        const reservation = scriptsManager2.reserveForTask(taskId)
+
+        const run = async () => {
+          return new Promise((resolve, reject) => {
+            scriptsManager2.execute({ foo: 'foo' }, {
+              taskId,
+              timeout: 200,
+              execModulePath: path.join(__dirname, 'scripts', 'script.js')
+            }, (err, res) => {
+              if (err) {
+                return reject(err)
+              }
+
+              resolve(res)
+            })
+          })
+        }
+
+        Promise.all([run(), run()]).then(() => {
+          done()
+        }).catch((err) => done(err)).finally(() => {
+          reservation.release()
+          scriptsManager2.kill()
+        })
+      })
+    })
+
+    it('should not stuck in deadlocks (using reservation api)', function (done) {
+      const scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
       let isDone = false
 
-      scriptsManager2.ensureStarted(function () {
-        var callback = function (newData, cb) {
+      scriptsManager2.ensureStarted((err) => {
+        if (err) {
+          return done(err)
+        }
+
+        const taskId = uuid()
+
+        const reservation = scriptsManager2.reserveForTask(taskId)
+
+        const callback = function (str, cb) {
           scriptsManager2.execute({ foo: 'foo' }, {
+            taskId,
             execModulePath: path.join(__dirname, 'scripts', 'script.js'),
             timeout: 100
-          }, function (err, res) {
+          }, (err, res) => {
             if (err) {
               if (isDone) {
                 return
               }
+
+              reservation.release()
               scriptsManager2.kill()
               isDone = true
               return done(err)
             }
 
-            cb()
+            cb(null, { ...res, str })
           })
         }
 
         scriptsManager2.execute({
           useCallback: true
         }, {
+          taskId,
           execModulePath: path.join(__dirname, 'scripts', 'callback.js'),
           callback: callback
-        }, function (err, res) {
+        }, (err, res) => {
           if (err) {
             if (isDone) {
               return
             }
+
             isDone = true
+            reservation.release()
             scriptsManager2.kill()
             return done(err)
           }
 
-          scriptsManager2.kill()
-          done()
+          try {
+            should(res.test).be.ok()
+            res.test.foo.should.be.eql('foo')
+            res.test.str.should.be.eql('test')
+            done()
+          } catch (e) {
+            done(e)
+          } finally {
+            reservation.release()
+            scriptsManager2.kill()
+          }
         })
+      })
+    })
+
+    it('should handle serialization error when sending message', function (done) {
+      scriptsManager.execute({
+        foo: new Proxy({ value: 'foo' }, {})
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'script.js')
+      }, function (err) {
+        if (err) {
+          if (!err.message.includes('could not be cloned')) {
+            return done(new Error(`Error was no the one expected. Got error message: ${err.message}`))
+          }
+
+          return done()
+        } else {
+          done(new Error('It should have failed'))
+        }
+      })
+    })
+
+    it('should handle serialization error when sending message (using reservation api)', function (done) {
+      const scriptsManager2 = new ScriptsManagerWithThreads({ numberOfWorkers: 1 })
+
+      scriptsManager2.ensureStarted((err) => {
+        if (err) {
+          return done(err)
+        }
+
+        const taskId = uuid()
+
+        const reservation = scriptsManager2.reserveForTask(taskId)
+
+        const run = async (value) => {
+          return new Promise((resolve, reject) => {
+            scriptsManager2.execute(value, {
+              taskId,
+              execModulePath: path.join(__dirname, 'scripts', 'script.js')
+            }, function (err, resp) {
+              if (err) {
+                return reject(err)
+              }
+
+              resolve(resp)
+            })
+          })
+        }
+
+        run({
+          foo: { value: 'foo' }
+        }).then(async () => {
+          return run({
+            foo: new Proxy({ value: 'foo' }, {})
+          }).then(() => {
+            throw new Error('It should have failed')
+          }, (err) => {
+            if (!err.message.includes('could not be cloned')) {
+              throw new Error(`Error was no the one expected. Got error message: ${err.message}`)
+            }
+          })
+        }).then(() => {
+          done()
+        }).catch((err) => {
+          done(err)
+        }).finally(() => {
+          reservation.release()
+          scriptsManager2.kill()
+        })
+      })
+    })
+
+    it('should handle serialization error when sending message (callback)', function (done) {
+      const callback = (value, cb) => {
+        cb(null, value)
+      }
+
+      scriptsManager.execute({
+        useProxyInCallback: true
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'callbackSerializationError.js'),
+        callback
+      }, function (err) {
+        if (err) {
+          if (!err.message.includes('could not be cloned')) {
+            return done(new Error(`Error was no the one expected. Got error message: ${err.message}`))
+          }
+
+          return done()
+        } else {
+          done(new Error('It should have failed'))
+        }
+      })
+    })
+
+    it('should handle serialization error when sending message (callback2)', function (done) {
+      const callback = (value, cb) => {
+        cb(null, new Proxy(value, {}))
+      }
+
+      scriptsManager.execute({
+        foo: 'foo'
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'callbackSerializationError.js'),
+        callback
+      }, function (err) {
+        if (err) {
+          if (!err.message.includes('could not be cloned')) {
+            return done(new Error(`Error was no the one expected. Got error message: ${err.message}`))
+          }
+
+          return done()
+        } else {
+          done(new Error('It should have failed'))
+        }
+      })
+    })
+
+    it('should handle serialization error when sending message (response)', function (done) {
+      const callback = (value, cb) => {
+        cb(null, value)
+      }
+
+      scriptsManager.execute({
+        useProxyInResponse: true
+      }, {
+        execModulePath: path.join(__dirname, 'scripts', 'callbackSerializationError.js'),
+        callback
+      }, function (err) {
+        if (err) {
+          if (!err.message.includes('could not be cloned')) {
+            return done(new Error(`Error was no the one expected. Got error message: ${err.message}`))
+          }
+
+          return done()
+        } else {
+          done(new Error('It should have failed'))
+        }
       })
     })
 
@@ -369,6 +569,10 @@ describe('scripts manager', function () {
     it('should handle unexpected error', function (done) {
       scriptsManager.execute({ foo: 'foo' }, { execModulePath: path.join(__dirname, 'scripts', 'unexpectedError.js') }, function (err, res) {
         if (err) {
+          if (!err.message.includes('j is not defined')) {
+            return done(new Error(`Error was no the one expected. Got error message: ${err.message}`))
+          }
+
           return done()
         }
 
