@@ -655,10 +655,11 @@ describe('scripts manager', function () {
           return done(err)
         }
 
-        should(res.buf.buffer != null).be.true()
+        should(res.isBufferInside).be.true()
+        should(Buffer.isBuffer(res.buf)).be.true()
         res.bufInText.should.be.eql('hello')
-        should(res.responseBuf.buffer != null).be.true()
-        Buffer.from(res.responseBuf).toString().should.be.eql('hello world')
+        should(Buffer.isBuffer(res.responseBuf)).be.true()
+        res.responseBuf.toString().should.be.eql('hello world')
         done()
       })
     })
@@ -666,7 +667,7 @@ describe('scripts manager', function () {
     it('should be able to handle buffer values (callback)', function (done) {
       var callback = function (newData, cb) {
         cb(null, Object.assign({}, newData, {
-          receivedBufInText: Buffer.from(newData.receivedBuf).toString()
+          receivedBufInText: newData.receivedBuf.toString()
         }))
       }
 
@@ -681,11 +682,12 @@ describe('scripts manager', function () {
           return done(err)
         }
 
-        should(res.buf.buffer != null).be.true()
+        should(res.isBufferInside).be.true()
+        should(Buffer.isBuffer(res.buf)).be.true()
         res.bufInText.should.be.eql('hello')
-        should(res.responseBuf.buffer != null).be.true()
-        Buffer.from(res.responseBuf).toString().should.be.eql('hello world')
-        should(res.receivedBuf.buffer != null).be.true()
+        should(Buffer.isBuffer(res.responseBuf)).be.true()
+        res.responseBuf.toString().should.be.eql('hello world')
+        should(Buffer.isBuffer(res.receivedBuf)).be.true()
         res.receivedBufInText.should.be.eql('secret message')
         done()
       })
